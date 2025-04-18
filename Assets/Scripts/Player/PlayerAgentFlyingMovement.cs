@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class PlayerAgentFlyingMovement : PlayerAgent,ITransformOnPortalTouch
+public class PlayerAgentFlyingMovement : PlayerAgent
 {
     [SerializeField]
     private float agentFlyingSpeed;
     [SerializeField]
     private float agentFlyingUpSpeed;
-    public bool isFlying { get; set; }
 
     private void Start()
     {
@@ -20,6 +19,8 @@ public class PlayerAgentFlyingMovement : PlayerAgent,ITransformOnPortalTouch
     {
         FlyingAgentMovement();
         FlyingUpMovement();
+        CheckJumpPointBehavior();
+        CheckObstacle(this.gameObject,1.2f, playerData.whatIsObstacle);
     }
 
     private void FlyingAgentMovement()
@@ -29,34 +30,54 @@ public class PlayerAgentFlyingMovement : PlayerAgent,ITransformOnPortalTouch
 
     private void FlyingUpMovement()
     {
-        this.transform.rotation = Quaternion.Euler(0, 0, _rb.velocity.y * 2);
-        if (isFlying)
+        if ((int)CurrentGravity == 1 || (int)CurrentGravity == -1)
         {
-            _rb.velocity = new Vector2(_rb.velocity.x, agentFlyingUpSpeed);
-            _rb.gravityScale = -4.315f;
-            isFlying = false;
+            this.transform.rotation = Quaternion.Euler(0, 0, _rb.velocity.y * 1.1f);
         }
-        _rb.gravityScale = 4.315f;
+        if ((int)CurrentGravity == 1)
+        {
+            this.transform.localScale = new Vector3(1, 1, 1);
+            if (Input.GetMouseButtonDown(0))
+            {
+                _rb.velocity = (Vector2.right + new Vector2(0,1.15f)) * agentFlyingUpSpeed;
+            }
+
+        }
+        else
+        {
+            this.transform.localScale = new Vector3(1, -1, 1);
+            if (Input.GetMouseButtonDown(0))
+            {
+                _rb.velocity = (Vector2.right + new Vector2(0, -1.15f)) * agentFlyingUpSpeed;
+            }
+
+        }
+        _rb.gravityScale = (int)CurrentGravity == 1 ? 5f : -5f;
     }
 
-    //private void ChangeThroughPortal(GameModes GameMode, Speeds Speed, Gravity Gravity, int State)
-    //{
-    //    switch (State)
-    //    {
-    //        case 0:
-    //            CurrentSpeed = Speed;
-    //            break;
-    //        case 1:
-    //            CurrentGameMode = GameMode;
-    //            break;
-    //        case 2:
-    //            _rb.gravityScale = Mathf.Abs(_rb.gravityScale) * (int)Gravity;
-    //            break;
-    //    }
-    //}
 
-    //public void OnPortalTouch(PortalScript portalScript)
-    //{
-    //    ChangeThroughPortal(portalScript.GameMode, portalScript.Speed, portalScript.Gravity, portalScript.State);
-    //}
+    private void CheckJumpPointBehavior()
+    {
+        if (IsNearGroundJumpPoint() || (IsNearAirJumpPoint() && Input.GetMouseButtonDown(0)))
+        {
+            _rb.velocity = new Vector2(_rb.velocity.x, playerData.allObjectJumpForce);
+        }
+    }
+
+    private bool IsNearGroundJumpPoint()
+    {
+        var hit = Physics2D.CircleCast(this.transform.position, playerData.allObjectJumpPointDistance, Vector2.zero, 0, playerData.whatIsGroundJumpPoint);
+        return hit.collider != null;
+    }
+
+    private bool IsNearAirJumpPoint()
+    {
+        var hit = Physics2D.CircleCast(this.transform.position, playerData.allObjectJumpPointDistance, Vector2.zero, 0, playerData.whatIsAirJumpPoint);
+        return hit.collider != null;
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawWireSphere(this.transform.position, 1.2f);
+    }
 }

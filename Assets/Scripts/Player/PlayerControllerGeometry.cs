@@ -1,50 +1,56 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class PlayerController : PlayerAgent, ITransformOnPortalTouch
+public class PlayerController : PlayerAgent
 {
-    [SerializeField]
-    private float jumpForce;
-    [SerializeField]
-    private float checkGroundDistance;
     [SerializeField]
     private float jumpPointDistance;
     [SerializeField]
     private float rotateVelocity;
     [SerializeField]
-    private LayerMask whatIsGround;
+    private SpriteRenderer spriteRenderer;
     [SerializeField]
-    private LayerMask whatIsJumpPoint;
+    private ParticleSystem _particleSystem;
     [SerializeField]
-    private LayerMask whatIsGroundJumpPoint;
-    [SerializeField]
-    private Transform Sprite;
+    private bool isOnSlope;
 
-    private RaycastHit2D hitGround;
+    private RaycastHit2D hitGrounded;
+
 
     public float angleOnSlope;
 
-    public bool IsJumping { get; set; }
-    public bool isOnSlope;
-
-
-    private int gravity;
+    private bool isJumping;
 
 
     private void Start()
     {
+        JumpGravity = (int)CurrentGravity;
         _rb = GetComponentInParent<Rigidbody2D>();
     }
 
     private void Update()
     {
+        PlayerGravity();
         PlayerMovement();
-        CheckWhenNearGroundJumpPoint();
         Jump();
         IsOnSlope();
+        JumpPointBehavior();
+        JumpPointGravityBehavior();
+        CheckParticleSystem();
+        ScaleWhenTouchThePortal();
+        CheckObstacle(this.gameObject, 0.85f, playerData.whatIsObstacle);   
+    }
+
+    private void PlayerGravity()
+    {
+        _rb.gravityScale = (JumpGravity == 1) ? 12f : -12f;
+        
     }
 
     private void PlayerMovement()
@@ -54,113 +60,97 @@ public class PlayerController : PlayerAgent, ITransformOnPortalTouch
 
     private void Jump()
     {
-        if (OnGrounded() || IsNearJumpPoint())
+        if (OnGround(this.gameObject, hitGrounded))
         {
             Vector3 Rotation = this.transform.eulerAngles;
             Rotation.z = Mathf.Round(Rotation.z / 90) * 90;
             this.transform.rotation = Quaternion.Euler(Rotation);
-            if (IsJumping)
+            if (Input.GetMouseButtonDown(0))
             {
-                gravity = (int)CurrentGravity;
-                _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], 1.3f * jumpForce * gravity);
+                isJumping = true;
+                _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], 1.3f * playerData.allObjectJumpForce * JumpGravity);
             }
+            isJumping = false;
         }
         else
         {
-            this.transform.Rotate((gravity == 1) ? Vector3.back * 2f : Vector3.forward * 2f);
+            this.transform.Rotate((JumpGravity == 1) ? Vector3.back * 3.5f : Vector3.forward * 3.5f);
         }
-        IsJumping = false;
+    }
+
+    private void ScaleWhenTouchThePortal()
+    {
+        Vector3 scaleWhenTouchPortal = speedValues[(int)CurrentSpeed] >= 30f ? this.transform.localScale = new Vector3(0.8f, 0.8f, 0) : this.transform.localScale = Vector3.one;
     }
 
 
-    private void CheckWhenNearGroundJumpPoint()
+    private void CheckParticleSystem()
     {
-        if (IsNearGroundJumpPoint())
+        if (OnGround(this.gameObject, hitGrounded))
         {
-            _rb.velocity = new Vector2(_rb.velocity.x, 1.5f * jumpForce);
+            _particleSystem.gameObject.SetActive(true);
+        }
+        else
+        {
+            _particleSystem.gameObject.SetActive(false);
         }
     }
 
-    public bool OnGrounded()
+    private void JumpPointBehavior()
     {
-        hitGround = Physics2D.Raycast(this.transform.position + Vector3.up, Vector2.down, checkGroundDistance, whatIsGround);
-        return hitGround.collider != null;
+        if (IsNearAirJumpPoint(this.gameObject) && Input.GetMouseButtonDown(0))
+        {
+            _rb.velocity = new Vector2(_rb.velocity.x * 1.5f, playerData.allObjectJumpForce * 1.8f);
+            var afterImage = PlayerAfterImagePool.Instance.GetFormPool();
+            afterImage.SetUp(spriteRenderer.sprite, spriteRenderer.transform.position, spriteRenderer.transform.rotation);
+        }
+        else if (IsNearGroundJumpPoint(this.gameObject))
+        {
+            _rb.velocity = new Vector2(_rb.velocity.x * 1.5f, playerData.allObjectJumpForce * 1.2f);
+            var afterImage = PlayerAfterImagePool.Instance.GetFormPool();
+            afterImage.SetUp(spriteRenderer.sprite, spriteRenderer.transform.position, spriteRenderer.transform.rotation);
+        }
     }
 
-    public bool IsNearJumpPoint()
+    private void JumpPointGravityBehavior()
     {
-        var hit = Physics2D.CircleCast(this.transform.position, jumpPointDistance, Vector2.zero, 0, whatIsJumpPoint);
-        return hit.collider != null;
+        if (IsNearAirJumpGravity(this.gameObject) && Input.GetMouseButtonDown(0))
+        {
+            JumpGravity *= -1;
+        }
     }
 
-    public bool IsNearGroundJumpPoint()
-    {
-        var hit = Physics2D.CircleCast(this.transform.position, jumpPointDistance, Vector2.zero, 0, whatIsGroundJumpPoint);
-        return hit.collider != null;
-    }
 
-    public void IsOnSlope()
+    private void IsOnSlope()
     {
-        Debug.DrawRay(hitGround.point, hitGround.normal, Color.yellow);
-        if (hitGround.normal.x == 0 && hitGround.normal.y == 1)
+        RaycastHit2D hitGroundForCheckSlope = Physics2D.Raycast(this.transform.position, (Vector2.down).normalized, playerData.checkGroundDistance, playerData.whatIsGround);
+        Debug.DrawRay(this.transform.position, (Vector2.down).normalized, Color.red);
+        Debug.DrawRay(hitGroundForCheckSlope.point, hitGroundForCheckSlope.normal, Color.yellow);
+        if (Math.Abs(hitGroundForCheckSlope.normal.x) <= 0.5f && Math.Abs(hitGroundForCheckSlope.normal.y) == 1)
         {
             isOnSlope = false;
-        }
-        else
-        {
-            isOnSlope = true;
-            angleOnSlope = Mathf.Abs(Mathf.Atan2(hitGround.normal.y, hitGround.normal.x) * Mathf.Rad2Deg);
+            angleOnSlope = 0f;
         }
 
-        if (angleOnSlope != 0)
+        else if (!isJumping && Math.Abs(hitGroundForCheckSlope.normal.x) >= 0.5f && Math.Abs(hitGroundForCheckSlope.normal.y) != 1)
         {
-            this.transform.Rotate(Vector3.back * Time.deltaTime, 180 - angleOnSlope);
+            isOnSlope = true;
+            angleOnSlope = Mathf.Atan2(hitGroundForCheckSlope.normal.y, hitGroundForCheckSlope.normal.x) * Mathf.Rad2Deg;
+        }
+        if (angleOnSlope != 0 && isOnSlope)
+        {
+            this.transform.up = hitGroundForCheckSlope.normal;
         }
 
     }
+
+
 
     private void OnDrawGizmos()
     {
-        Gizmos.DrawRay(this.transform.position + Vector3.up, Vector2.down * checkGroundDistance);
-        //Gizmos.DrawWireSphere(this.transform.position, jumpPointDistance);
+        Gizmos.DrawRay(this.transform.position, Vector2.right * 1.5f);
+        Gizmos.DrawRay(this.transform.position + Vector3.up, Vector2.down * playerData.checkGroundDistance);
+        Gizmos.DrawWireSphere(this.transform.position, 0.85f);
     }
 
-    //private void ChangeThroughPortal(GameModes GameMode, Speeds Speed, Gravity Gravity, int State)
-    //{
-    //    switch (State)
-    //    {
-    //        case 0:
-    //            CurrentSpeed = Speed;
-    //            break;
-    //        case 1:
-    //            CurrentGameMode = GameMode;
-    //            GameModes[] gameModes = { GameModes.Cube, GameModes.Ship, GameModes.UFO, GameModes.Ball, GameModes.Spider, GameModes.Wave };
-    //            foreach(GameModes gameMode in gameModes)
-    //            {
-    //                if(gameMode == CurrentGameMode)
-    //                {
-    //                    Observer.Instance.Notify(EventID.OnPlayerTransform, (GameModes)gameMode);
-    //                }
-    //            }
-
-    //            //if (CurrentGameMode == GameModes.Ship)
-    //            //{
-    //            //    Observer.Instance.Notify(EventID.OnPlayerTransform, GameModes.Ship);
-    //            //}
-    //            //else if (CurrentGameMode == GameModes.Cube)
-    //            //{
-    //            //    Observer.Instance.Notify(EventID.OnPlayerTransform, GameModes.Cube);
-    //            //}
-    //            break;
-    //        case 2:
-    //            _rb.gravityScale = Mathf.Abs(_rb.gravityScale) * (int)Gravity;
-    //            CurrentGravity = Gravity;
-    //            break;
-    //    }
-    //}
-
-    //public void OnPortalTouch(PortalScript portalScript)
-    //{
-    //    ChangeThroughPortal(portalScript.GameMode, portalScript.Speed, portalScript.Gravity, portalScript.State);
-    //}
 }

@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
 
-public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
     private static T instance;
 
@@ -10,7 +11,7 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         get
         {
-            if(instance == null)
+            if (instance == null)
             {
                 instance = FindObjectOfType<T>();
 
@@ -31,11 +32,13 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 
     private void CreateIntance()
     {
-        if(instance == null)
+        if (instance == null)
         {
             instance = this as T;
-
-            DontDestroyOnLoad(gameObject);
+            if (!ShouldDestroyOnLoad)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
         }
 
         else
@@ -43,4 +46,12 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
+    private void OnDestroy()
+    {
+        if (instance == null) return;
+        instance = null;
+    }
+
+    protected virtual bool ShouldDestroyOnLoad { get; }
 }

@@ -7,6 +7,8 @@ public class Observer : Singleton<Observer>
 {
     private Dictionary<EventID, Action<object>> Listeners = new Dictionary<EventID, Action<object>>();
 
+    protected override bool ShouldDestroyOnLoad => false;
+
     public void AddObserver(EventID gameMode,Action<object> action)
     {
         if (!Listeners.ContainsKey(gameMode))

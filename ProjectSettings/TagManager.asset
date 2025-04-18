@@ -15,11 +15,11 @@ TagManager:
   - UI
   - Ground
   - Obstacle
-  - JumpPoint
+  - AirJumpPoint
   - GroundJumpPoint
   - Player
-  - 
-  - 
+  - Wall
+  - AirJumpPointGravity
   - 
   - 
   - 
@@ -42,4 +42,31 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: BackGround
+    uniqueID: 887771897
+    locked: 0
+  - name: Player
+    uniqueID: 2095905775
+    locked: 0
+  - name: AirJumpPoint
+    uniqueID: 1924140517
+    locked: 0
+  - name: Portal
+    uniqueID: 2066940385
+    locked: 0
+  - name: Ground
+    uniqueID: 2178105261
+    locked: 0
+  - name: AfterSprites
+    uniqueID: 1980197865
+    locked: 0
+  - name: ParticleEffect
+    uniqueID: 4051631699
+    locked: 0
+  - name: Obstacle
+    uniqueID: 1562840033
+    locked: 0
+  - name: JumpGravity
+    uniqueID: 2482738261
     locked: 0
