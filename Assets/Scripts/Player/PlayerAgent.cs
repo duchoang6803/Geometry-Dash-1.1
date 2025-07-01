@@ -108,6 +108,7 @@ public class PlayerAgent : MonoBehaviour, ITransformOnPortalTouch
     {
         var hit = Physics2D.CircleCast(gameObject.transform.position, playerData.allObjectJumpPointDistance, Vector2.zero, 0, playerData.whatIsAirJumpPoint);
         return hit.collider != null;
+
     }
 
     public bool IsNearAirJumpGravity(GameObject gameObject)
@@ -120,5 +121,7 @@ public class PlayerAgent : MonoBehaviour, ITransformOnPortalTouch
     {
         ChangeThroughPortal(portalScript.GameMode, portalScript.Speed, portalScript.Gravity, portalScript.State);
     }
+
+
 
 }
