@@ -3,16 +3,27 @@ using System.Collections.Generic;
 using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 
+public interface IVelocityPlayerPauseGame
+{
+    public void OnVelocityPlayer();
+}
+
+public interface IVelocityPlayerContinueGame
+{
+    public void OnVelocityPlayerContinueGame();
+}
+
 public class PlayerAgent : MonoBehaviour, ITransformOnPortalTouch
 {
     [SerializeField] private GameObject[] gameObjects;
     [SerializeField] protected D_PlayerData playerData;
     [SerializeField] private SoundManager soundManager;
+    [SerializeField] private ButtonBase buttonBase;
 
     private PlayerController _playerCube;
     [HideInInspector]
     public Rigidbody2D _rb;
-    protected float[] speedValues = { 8.6f, 10.4f, 12.96f, 15.6f, 19.2f, 21f, 32f };
+    protected float[] speedValues = { 8.6f, 10.4f, 12.96f, 15.6f, 19.2f, 21f, 32f};
 
     public Speeds CurrentSpeed;
     public GameModes CurrentGameMode;
@@ -21,10 +32,15 @@ public class PlayerAgent : MonoBehaviour, ITransformOnPortalTouch
     private int state { get; set; }
     protected int JumpGravity { get; set; }
 
+    protected bool isPlayerStop;
+
 
     private void Start()
     {
         Observer.Instance.AddObserver(EventID.OnPlayerTransform, PlayerTransform);
+        Observer.Instance.AddObserver(EventID.OnPlayerVelocityPauseGame, PlayerVelocityPauseGame);
+        Observer.Instance.AddObserver(EventID.OnPlayerVelocityContinueGame, PlayerVelocityContinueGame);
+
     }
 
     private void OnDestroy()
@@ -32,6 +48,9 @@ public class PlayerAgent : MonoBehaviour, ITransformOnPortalTouch
         if (Observer.Instance)
         {
             Observer.Instance.RemoveObserver(EventID.OnPlayerTransform, PlayerTransform);
+            Observer.Instance.RemoveObserver(EventID.OnPlayerVelocityPauseGame, PlayerVelocityPauseGame);
+            Observer.Instance.RemoveObserver(EventID.OnPlayerVelocityContinueGame, PlayerVelocityContinueGame);
+
         }
 
     }
@@ -51,6 +70,18 @@ public class PlayerAgent : MonoBehaviour, ITransformOnPortalTouch
                 gameObjects[i].SetActive(false);
             }
         }
+    }
+
+    public void PlayerVelocityPauseGame(object data)
+    {
+        var playerVelocity = this.gameObject.GetComponentInChildren<IVelocityPlayerPauseGame>();
+        playerVelocity.OnVelocityPlayer();
+    }
+
+    public void PlayerVelocityContinueGame(object data)
+    {
+        var playerVelocityContinue = this.gameObject.GetComponentInChildren<IVelocityPlayerContinueGame>();
+        playerVelocityContinue.OnVelocityPlayerContinueGame();
     }
 
 
@@ -86,7 +117,7 @@ public class PlayerAgent : MonoBehaviour, ITransformOnPortalTouch
         Collider2D checkHitObstacle = Physics2D.OverlapCircle(gameObject.transform.position, radiusCheckCollider, whatIsObstacle);
         if (checkHitObstacle == null) return;
         Destroy(gameObject);
-        Observer.Instance.Notify(EventID.OnMusicPlayerDead, null);
+        Observer.Instance.Notify(EventID.OnTurnOfMusic, null);
         Observer.Instance.Notify(EventID.OnSFXDeadSound, null);
         _rb.velocity = Vector2.zero;
         _rb.gravityScale = 0f;

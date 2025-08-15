@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-public class PlayerUFOMovement : PlayerAgent
+public class PlayerUFOMovement : PlayerAgent, IVelocityPlayerPauseGame
 {
     [SerializeField] private float hightOfFlying;
     [SerializeField] private float amplificateXVelocity;
@@ -36,29 +36,42 @@ public class PlayerUFOMovement : PlayerAgent
         CheckObstacle(this.gameObject, 1.1f, playerData.whatIsObstacle);
     }
 
+    public void OnVelocityPlayer()
+    {
+        isPlayerStop = true;
+    }
+
     private void UFOMovement()
     {
-        JumpGravity = (int)CurrentGravity;
-        if (JumpGravity == 1)
+        if (!isPlayerStop)
         {
-            this.transform.localScale = new Vector3(1, 1, 1);
-            if (Input.GetMouseButtonDown(0))
+            JumpGravity = (int)CurrentGravity;
+            if (JumpGravity == 1)
             {
-                _rb.velocity = (Vector2.right * 1.25f + Vector2.up * 1.1f) * speedValues[(int)CurrentSpeed];
+                this.transform.localScale = new Vector3(1, 1, 1);
+                if (Input.GetMouseButtonDown(0))
+                {
+                    _rb.velocity = (Vector2.right * 1.25f + Vector2.up * 1.1f) * speedValues[(int)CurrentSpeed];
+                }
+            }
+            else
+            {
+                this.transform.localScale = new Vector3(1, -1, 1);
+                if (Input.GetMouseButtonDown(0))
+                {
+                    _rb.velocity = (Vector2.right * 1.25f + Vector2.down * 1.1f) * speedValues[(int)CurrentSpeed];
+                }
+            }
+            _rb.gravityScale = JumpGravity == 1 ? 10f : -10f;
+            if (OnGround(this.gameObject, hitGround))
+            {
+                _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
             }
         }
         else
         {
-            this.transform.localScale = new Vector3(1, -1, 1);
-            if (Input.GetMouseButtonDown(0))
-            {
-                _rb.velocity = (Vector2.right * 1.25f + Vector2.down * 1.1f) * speedValues[(int)CurrentSpeed];
-            }
-        }
-        _rb.gravityScale = JumpGravity == 1 ? 10f : -10f;
-        if (OnGround(this.gameObject, hitGround))
-        {
-            _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
+            _rb.velocity = Vector2.zero;
+            _rb.gravityScale = 0f;
         }
     }
 
@@ -90,5 +103,6 @@ public class PlayerUFOMovement : PlayerAgent
     {
         Gizmos.DrawWireSphere(this.transform.position, 1.1f);
     }
+
 
 }

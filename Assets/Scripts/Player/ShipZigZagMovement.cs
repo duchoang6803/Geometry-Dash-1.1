@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ShipZigZagMovement : PlayerAgent
+public class ShipZigZagMovement : PlayerAgent, IVelocityPlayerPauseGame
 {
     [SerializeField]
     private float forceGoingUp;
@@ -18,15 +18,29 @@ public class ShipZigZagMovement : PlayerAgent
     {
         ShipZigZagMovementBehavior();
         ShipZigZagRotate();
-        CheckObstacle(this.gameObject,0.7f, playerData.whatIsGround); // Ground is the Obstacle for this gameObject
+        CheckObstacle(this.gameObject, 0.7f, playerData.whatIsGround); // Ground is the Obstacle for this gameObject
+    }
+
+    public void OnVelocityPlayer()
+    {
+        isPlayerStop = true;
+
     }
 
     private void ShipZigZagMovementBehavior()
     {
-        _rb.gravityScale = 0;
-        _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], speedValues[(int)CurrentSpeed] * (Input.GetMouseButton(0) ? 1 : -1));
-        var afterImage = PlayerAfterImagePool.Instance.GetFormPool();
-        afterImage.SetUp(spriteRendererForShipZigZag.sprite, spriteRendererForShipZigZag.transform.position, spriteRendererForShipZigZag.transform.rotation);
+        if (isPlayerStop)
+        {
+            _rb.velocity = Vector2.zero;
+            _rb.gravityScale = 0f;
+        }
+        else
+        {
+            _rb.gravityScale = 0;
+            _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], speedValues[(int)CurrentSpeed] * (Input.GetMouseButton(0) ? 1 : -1));
+            var afterImage = PlayerAfterImagePool.Instance.GetFormPool();
+            afterImage.SetUp(spriteRendererForShipZigZag.sprite, spriteRendererForShipZigZag.transform.position, spriteRendererForShipZigZag.transform.rotation);
+        }
     }
 
 
@@ -39,5 +53,6 @@ public class ShipZigZagMovement : PlayerAgent
     {
         Gizmos.DrawWireSphere(this.transform.position, 0.7f);
     }
+
 
 }

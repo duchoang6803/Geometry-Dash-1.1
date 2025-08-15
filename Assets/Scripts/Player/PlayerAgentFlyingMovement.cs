@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class PlayerAgentFlyingMovement : PlayerAgent
+public class PlayerAgentFlyingMovement : PlayerAgent, IVelocityPlayerPauseGame
 {
     [SerializeField]
     private float agentFlyingSpeed;
@@ -20,13 +20,26 @@ public class PlayerAgentFlyingMovement : PlayerAgent
         FlyingAgentMovement();
         FlyingUpMovement();
         CheckJumpPointBehavior();
-        CheckObstacle(this.gameObject,1.2f, playerData.whatIsObstacle);
+        CheckObstacle(this.gameObject, 1.2f, playerData.whatIsObstacle);
     }
 
+    public void OnVelocityPlayer()
+    {
+        isPlayerStop = true;
+    }
     private void FlyingAgentMovement()
     {
-        _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
+        if (isPlayerStop)
+        {
+            _rb.velocity = Vector2.zero;
+            _rb.gravityScale = 0f;
+        }
+        else
+        {
+            _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
+        }
     }
+
 
     private void FlyingUpMovement()
     {
@@ -39,7 +52,7 @@ public class PlayerAgentFlyingMovement : PlayerAgent
             this.transform.localScale = new Vector3(1, 1, 1);
             if (Input.GetMouseButtonDown(0))
             {
-                _rb.velocity = (Vector2.right + new Vector2(0,1.15f)) * agentFlyingUpSpeed;
+                _rb.velocity = (Vector2.right + new Vector2(0, 1.15f)) * agentFlyingUpSpeed;
             }
 
         }
@@ -80,4 +93,6 @@ public class PlayerAgentFlyingMovement : PlayerAgent
     {
         Gizmos.DrawWireSphere(this.transform.position, 1.2f);
     }
+
+
 }

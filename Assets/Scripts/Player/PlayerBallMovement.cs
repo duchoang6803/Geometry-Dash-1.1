@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PlayerBallMovement : PlayerAgent
+public class PlayerBallMovement : PlayerAgent, IVelocityPlayerPauseGame
 {
 
     [SerializeField]
@@ -21,15 +21,28 @@ public class PlayerBallMovement : PlayerAgent
         BallMovement();
         BallSwitchGravity();
         CheckJumpPointBehavior();
-        CheckObstacle(this.gameObject,0.8f,playerData.whatIsObstacle);
+        CheckObstacle(this.gameObject, 0.8f, playerData.whatIsObstacle);
         BallRotate();
+    }
+
+    public void OnVelocityPlayer()
+    {
+        isPlayerStop = true;
     }
 
     private void BallMovement()
     {
-        _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
-        var afterImage = PlayerAfterImagePool.Instance.GetFormPool();
-        afterImage.SetUp(ballSprite.sprite, ballSprite.transform.position, ballSprite.transform.rotation);
+        if (isPlayerStop)
+        {
+            _rb.velocity = Vector2.zero;
+            _rb.gravityScale = 0f;
+        }
+        else
+        {
+            _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
+            var afterImage = PlayerAfterImagePool.Instance.GetFormPool();
+            afterImage.SetUp(ballSprite.sprite, ballSprite.transform.position, ballSprite.transform.rotation);
+        }
     }
 
     private void BallRotate()
@@ -39,7 +52,7 @@ public class PlayerBallMovement : PlayerAgent
 
     private void BallSwitchGravity()
     {
-        if (OnGround(this.gameObject,hitGround))
+        if (OnGround(this.gameObject, hitGround))
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -61,4 +74,6 @@ public class PlayerBallMovement : PlayerAgent
     {
         Gizmos.DrawWireSphere(this.transform.position, 0.8f);
     }
+
+
 }

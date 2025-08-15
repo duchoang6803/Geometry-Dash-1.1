@@ -7,7 +7,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class PlayerController : PlayerAgent
+public class PlayerController : PlayerAgent,IVelocityPlayerPauseGame,IVelocityPlayerContinueGame
 {
     [SerializeField]
     private float jumpPointDistance;
@@ -32,7 +32,9 @@ public class PlayerController : PlayerAgent
     {
         JumpGravity = (int)CurrentGravity;
         _rb = GetComponentInParent<Rigidbody2D>();
+        
     }
+
 
     private void Update()
     {
@@ -44,18 +46,39 @@ public class PlayerController : PlayerAgent
         JumpPointGravityBehavior();
         CheckParticleSystem();
         ScaleWhenTouchThePortal();
-        CheckObstacle(this.gameObject, 0.85f, playerData.whatIsObstacle);   
+        CheckObstacle(this.gameObject, 0.85f, playerData.whatIsObstacle);
     }
 
     private void PlayerGravity()
     {
         _rb.gravityScale = (JumpGravity == 1) ? 12f : -12f;
-        
+
     }
+
+    public void OnVelocityPlayer()
+    {
+        isPlayerStop = true;
+    }
+
+    public void OnVelocityPlayerContinueGame()
+    {
+        isPlayerStop = false;
+    }
+
 
     private void PlayerMovement()
     {
-        _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
+        if (isPlayerStop == true)
+        {
+            _rb.velocity = Vector2.zero;
+            _rb.gravityScale = 0f;
+            this.transform.rotation = Quaternion.identity;
+        }
+        else
+        {
+            PlayerGravity();
+            _rb.velocity = new Vector2(speedValues[(int)CurrentSpeed], _rb.velocity.y);
+        }
     }
 
     private void Jump()

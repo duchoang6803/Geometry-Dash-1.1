@@ -28,7 +28,7 @@ public class SoundManager : Singleton<SoundManager>
 
     private void OnEnable()
     {
-        Observer.Instance.AddObserver(EventID.OnMusicPlayerDead, StopMusicWhenPlayerDie);
+        Observer.Instance.AddObserver(EventID.OnTurnOfMusic, StopMusicWhenPlayerDieAndPauseGame);
         Observer.Instance.AddObserver(EventID.OnSFXDeadSound, PlayerSFXSoundWhenDead);
     }
 
@@ -36,20 +36,21 @@ public class SoundManager : Singleton<SoundManager>
     {
         if (Observer.Instance != null)
         {
-            Observer.Instance.RemoveObserver(EventID.OnMusicPlayerDead, StopMusicWhenPlayerDie);
+            Observer.Instance.RemoveObserver(EventID.OnTurnOfMusic, StopMusicWhenPlayerDieAndPauseGame);
             Observer.Instance.RemoveObserver(EventID.OnSFXDeadSound, PlayerSFXSoundWhenDead);
 
         }
 
     }
 
-    private void PlayMusicTheme()
+    public void PlayMusicTheme()
     {
         musicSource.clip = musicClip;
         musicSource.volume = musicVolume;
+        musicSource.Play();
     }
 
-    private void StopMusicWhenPlayerDie(object data)
+    private void StopMusicWhenPlayerDieAndPauseGame(object data)
     {
         if (musicSource.isPlaying)
         {

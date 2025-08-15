@@ -14,7 +14,6 @@ public class TextUI : MonoBehaviour
 
     private void OnEnable()
     {
-        Debug.Log("OnEnable");
         Observer.Instance.AddObserver(EventID.OnLoadScenePlayerDead, CountAttemptWhenPlayerDead);
     }
 
@@ -28,7 +27,6 @@ public class TextUI : MonoBehaviour
 
     private void Start()
     {
-        //countAttemp = PlayerPrefs.GetInt("Attempt", 1);
         attemptText.text = "Attempt: " + AttemptWhenDead.dieCount.ToString();
 
 
